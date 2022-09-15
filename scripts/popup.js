@@ -1,48 +1,110 @@
 // Initialize button with user's preferred color
-let transform = document.getElementById("transform");
-let disabledPages = document.getElementById("disabledPages");
+// let transform = document.getElementById("transform");
+let disabledPagesElement = document.getElementById("disabledPages");
 let disabledSitesElement = document.getElementById("disabledSites");
+let site = undefined;
+let page = undefined;
 
-chrome.storage.sync.get("pageStatus", ({ pageStatus }) => {
-  transform.pageStatus = pageStatus;
+//Grab urls 
+chrome.tabs.query(
+  {
+    currentWindow: true, active: true
+  },
+  function (foundTabs) {
+      let url = new URL(foundTabs[0].url);
+      site = url.site; // doesn't define? TODO
+      page = url.site + url.pathname; 
+  }
+);
+
+//Set the toggles appropriately
+chrome.storage.sync.get("listOfDisabledSites", ({ listOfDisabledSites }) => {
+  disabledSitesElement.getElementsByClassName("toggle-checkbox")[0].checked =
+    listOfDisabledSites.includes(site);
+});
+chrome.storage.sync.get("listOfDisabledPages", ({ listOfDisabledPages }) => {
+  disabledPagesElement.getElementsByClassName("toggle-checkbox")[0].checked =
+    listOfDisabledPages.includes(page);
 });
 
-chrome.storage.sync.get("disabledSites", ({ disabledSites }) => {
-  disabledSitesElement.disabledSites = disabledSites;
-});
-
-// When the button is clicked, inject setPageBackgroundColor into current page
-transform.addEventListener("click", async () => {
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: transformNumbersOfPage,
-  });
-});
-
+//Set click listeners
 disabledSitesElement.addEventListener("click", async () => {
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  _status = disabledSitesElement.getElementsByClassName("toggle-checkbox")[0].checked;
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    func: disableThisSite,
+    func: handleToggle,
+    args: [0, _status]
   });
 });
 
-function disableThisSite() {
-  chrome.storage.sync.get("disabledSites", ({ disabledSites }) => {
-    console.log(disabledSites)
-    current_site = window.location.href
-    console.log("Found this site:", `${current_site}`)
-    // disabledSites.push(current_site);
-    console.log("New list", disabledSites)
-    chrome.storage.sync.set({ disabledSites });
+disabledPagesElement.addEventListener("click", async () => {
+  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  _status = disabledPagesElement.getElementsByClassName("toggle-checkbox")[0].checked;
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: handleToggle,
+    args: [1, _status]
   });
-}
-// The body of this function will be executed as a content script inside the
-// current page
-function transformNumbersOfPage() {
-  chrome.storage.sync.get("pageStatus", ({ pageStatus }) => {
+});
+
+
+// 0 = site, 1 = page
+function handleToggle(type, status) {
+  if (_checkDoubleAccess(type, status)) {
+    return;
+  }
+  console.log("Inside received: (" + type + ") ", `${status}`)
+  if (type === 0) {
+    chrome.storage.sync.get({ listOfDisabledSites: [] },
+      function (data) {
+        _update(type, data.listOfDisabledSites); //storing the storage value in a variable and passing to update function
+      }
+    );
+  } else {
+    chrome.storage.sync.get({ listOfDisabledPages: [] },
+      function (data) {
+        _update(type, data.listOfDisabledPages);
+      }
+    );
+  }
+  function _update(type, array) {
+    current = null;
+    if (type == 0) {
+      current = site;
+    } else if (type == 1) {
+      current = page;
+    }
+    if (current == null) {
+      console.log("Couldn't grab URL");
+    }
+    console.log(array + " @ " + current)
+    if (array.includes(current)) {
+      console.log((type === 0 ? "Site" : "Page") + " already disabled. Undo!");
+    } else {
+      console.log("Added to list of disabled.");
+      array.push(current);
+
+      _transformNumbersOfPage();
+    }
+    //then call the set to update with modified value
+    if (type == 0) {
+      chrome.storage.sync.set({
+        listOfDisabledSites: array
+      }, function () {
+        console.log("added to site list with new values ", `${array}`);
+      });
+    } else {
+      chrome.storage.sync.set({
+        listOfDisabledPages: array
+      }, function () {
+        console.log("added to page list with new values ", `${array}`);
+      });
+    }
+  }
+
+  //Transform the page
+  function _transformNumbersOfPage() {
     function escapeHtml(unsafe) {
       return unsafe.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
     }
@@ -63,18 +125,22 @@ function transformNumbersOfPage() {
         child.replaceWith(span);
       }
     }
+    replaceNumbers(document.body);
+  }
 
-    pageStatus = !pageStatus;
-    chrome.storage.sync.set({ pageStatus });
-
-    if (!pageStatus) {
-      // revert ? [might be just refreshing]
-    } else {
-      replaceNumbers(document.body);
+  function _checkDoubleAccess(type, status) {
+    if (document["guysExtensionHandleToggle" + type] === status) {
+      console.log("already called " + (type == 0 ? "site" : "page") + " with same status, returning");
+      return true;
     }
-    console.log("page status = " + pageStatus);
-  });
+    document["guysExtensionHandleToggle" + type] = status;
+    return false;
+  }
 }
+
+// The body of this function will be executed as a content script inside the
+// current page
+
 
 
 //  /(?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?/
