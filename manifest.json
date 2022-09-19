@@ -1,6 +1,6 @@
 {
-  "name": "Getting Started Example",
-  "description": "Build an Extension!",
+  "name": "Hidden Numbers",
+  "description": "Can you guess the numbers? Hide all numbers in almost any site.",
   "version": "1.0",
   "manifest_version": 3,
   "background": {
