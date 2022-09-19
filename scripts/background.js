@@ -24,7 +24,7 @@ function backgroundScript(site, page) {
       list = listOfPages;
       if (page in list) {
         if (list[page])
-        transform = list[page];
+          transform = list[page];
       }
       if (transform) {
         _transformNumbersOfPage();
@@ -41,10 +41,11 @@ function backgroundScript(site, page) {
             continue;
           }
           let text = escapeHtml(child.textContent);
-          if (!/\d/.test(text)) continue;
+          let regex = /(?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?/g
+          if (!regex.test(text)) continue;
           text = text.replace(
-            /(\d+)/g,
-            "<span onMouseOver='this.replaceWith(document.createTextNode(\"$1\"))'>XXXX</span>"
+            /((?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?)/g,
+            "<span style=\"background-color: black; color: black\" onMouseOver='this.replaceWith(document.createTextNode(\"$1\"))'>XXXX</span>"
           );
           const span = document.createElement("span");
           span.innerHTML = text;

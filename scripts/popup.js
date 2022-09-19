@@ -97,7 +97,6 @@ function handleToggle(type, status, site, page) {
     }
     dict[current] = status
 
-    console.log("status="+status+", current="+current+", dict[current]="+dict[current])
     if (status) {
       _transformNumbersOfPage()
     }
@@ -124,10 +123,11 @@ function handleToggle(type, status, site, page) {
           continue;
         }
         let text = escapeHtml(child.textContent);
-        if (!/\d/.test(text)) continue;
+        let regex = /(?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?/g
+        if (!regex.test(text)) continue;
         text = text.replace(
-          /(\d+)/g,
-          "<span onMouseOver='this.replaceWith(document.createTextNode(\"$1\"))'>XXXX</span>"
+          /((?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?)/g,
+          "<span style=\"background-color: black; color: black\" onMouseOver='this.replaceWith(document.createTextNode(\"$1\"))'>XXXX</span>"
         );
         const span = document.createElement("span");
         span.innerHTML = text;
@@ -141,4 +141,3 @@ function handleToggle(type, status, site, page) {
     replaceNumbers(document.body);
   }
 }
-//  /(?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?/
