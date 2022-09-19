@@ -134,10 +134,16 @@ function handleToggle(type, status, site, page) {
         child.replaceWith(span);
       }
     }
-    if (site == "www.google.com") {
+    if (site   == "www.google.com") {
       console.log("This page is not supported for transformation.")
       return;
     }
-    replaceNumbers(document.body);
+    replaceNumbers(document.body);  
+
+
+
+
+
+        
   }
 }
