@@ -1,109 +1,118 @@
 // Initialize button with user's preferred color
 // let transform = document.getElementById("transform");
-let disabledPagesElement = document.getElementById("disabledPages");
-let disabledSitesElement = document.getElementById("disabledSites");
-let site = undefined;
-let page = undefined;
+let disabledPagesElement = document.getElementById("disabledPages").getElementsByTagName("input")[0];
+let disabledSitesElement = document.getElementById("disabledSites").getElementsByTagName("input")[0];
+let site, page;
 
-//Grab urls 
-chrome.tabs.query(
-  {
-    currentWindow: true, active: true
-  },
+chrome.tabs.query({ active: true, currentWindow: true },
   function (foundTabs) {
-      let url = new URL(foundTabs[0].url);
-      site = url.site; // doesn't define? TODO
-      page = url.site + url.pathname; 
-  }
-);
+    let url = new URL(foundTabs[0].url);
+    site = url.hostname;
+    page = url.hostname + url.pathname;
+  });
 
 //Set the toggles appropriately
-chrome.storage.sync.get("listOfDisabledSites", ({ listOfDisabledSites }) => {
-  disabledSitesElement.getElementsByClassName("toggle-checkbox")[0].checked =
-    listOfDisabledSites.includes(site);
-});
-chrome.storage.sync.get("listOfDisabledPages", ({ listOfDisabledPages }) => {
-  disabledPagesElement.getElementsByClassName("toggle-checkbox")[0].checked =
-    listOfDisabledPages.includes(page);
+chrome.storage.sync.get("listOfSites", ({ listOfSites }) => {
+  disabledSitesElement.checked = (site in listOfSites ? listOfSites[site] : false);
+  chrome.storage.sync.get("listOfPages", ({ listOfPages }) => {
+    shouldEnablePage = false;
+    if (page in listOfPages) {
+      shouldEnablePage = listOfPages[page];
+    } else {
+      if (site in listOfSites) {
+        if (listOfSites[site] === true) {
+          shouldEnablePage = true;
+        }
+      } else {
+        shouldEnablePage = false;
+      }
+    }
+    disabledPagesElement.checked = shouldEnablePage
+  });
 });
 
 //Set click listeners
 disabledSitesElement.addEventListener("click", async () => {
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  _status = disabledSitesElement.getElementsByClassName("toggle-checkbox")[0].checked;
+  let siteEnabled = disabledSitesElement.checked;
+  chrome.storage.sync.get("listOfPages", ({ listOfPages }) => {
+    shouldEnablePage = false;
+    if (page in listOfPages) {
+      shouldEnablePage = listOfPages[page];
+    } else {
+      shouldEnablePage = siteEnabled;
+    }
+    disabledPagesElement.checked = shouldEnablePage
+  });
+
+  //execute injected script
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
     func: handleToggle,
-    args: [0, _status]
+    args: [0, siteEnabled, site, page]
   });
 });
 
-disabledPagesElement.addEventListener("click", async () => {
+//TODO So the issue is that it clicks twice once and then when it turns on
+disabledPagesElement.addEventListener("click", async (e) => {
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  _status = disabledPagesElement.getElementsByClassName("toggle-checkbox")[0].checked;
+  let pageEnabled = disabledPagesElement.checked;
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
     func: handleToggle,
-    args: [1, _status]
+    args: [1, pageEnabled, site, page]
   });
 });
 
 
-// 0 = site, 1 = page
-function handleToggle(type, status) {
-  if (_checkDoubleAccess(type, status)) {
-    return;
-  }
-  console.log("Inside received: (" + type + ") ", `${status}`)
+function handleToggle(type, status, site, page) {
+  //initially we have site and page set to true.
+  //when we disable site, then page also disables.
+  //but when site and page are disabled, and then we enable page, it bypasses the site disabling only for that page.
   if (type === 0) {
-    chrome.storage.sync.get({ listOfDisabledSites: [] },
+    chrome.storage.sync.get({ listOfSites: {} },
       function (data) {
-        _update(type, data.listOfDisabledSites); //storing the storage value in a variable and passing to update function
+        _update(type, status, data.listOfSites, site, page);
       }
     );
   } else {
-    chrome.storage.sync.get({ listOfDisabledPages: [] },
+    chrome.storage.sync.get({ listOfPages: {} },
       function (data) {
-        _update(type, data.listOfDisabledPages);
+        _update(type, status, data.listOfPages, site, page);
       }
     );
   }
-  function _update(type, array) {
-    current = null;
-    if (type == 0) {
+
+  function _update(type, status, dict, site, page) {
+    current = undefined;
+
+    if (type === 0) {
       current = site;
-    } else if (type == 1) {
+    } else if (type === 1) {
       current = page;
     }
-    if (current == null) {
+    if (current === undefined) {
       console.log("Couldn't grab URL");
+      return;
     }
-    console.log(array + " @ " + current)
-    if (array.includes(current)) {
-      console.log((type === 0 ? "Site" : "Page") + " already disabled. Undo!");
-    } else {
-      console.log("Added to list of disabled.");
-      array.push(current);
+    dict[current] = status
 
-      _transformNumbersOfPage();
+    console.log("status="+status+", current="+current+", dict[current]="+dict[current])
+    if (status) {
+      _transformNumbersOfPage()
     }
     //then call the set to update with modified value
     if (type == 0) {
       chrome.storage.sync.set({
-        listOfDisabledSites: array
-      }, function () {
-        console.log("added to site list with new values ", `${array}`);
+        listOfSites: dict
       });
     } else {
       chrome.storage.sync.set({
-        listOfDisabledPages: array
-      }, function () {
-        console.log("added to page list with new values ", `${array}`);
+        listOfPages: dict
       });
     }
   }
 
-  //Transform the page
   function _transformNumbersOfPage() {
     function escapeHtml(unsafe) {
       return unsafe.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
@@ -125,22 +134,11 @@ function handleToggle(type, status) {
         child.replaceWith(span);
       }
     }
+    if (site == "www.google.com") {
+      console.log("This page is not supported for transformation.")
+      return;
+    }
     replaceNumbers(document.body);
   }
-
-  function _checkDoubleAccess(type, status) {
-    if (document["guysExtensionHandleToggle" + type] === status) {
-      console.log("already called " + (type == 0 ? "site" : "page") + " with same status, returning");
-      return true;
-    }
-    document["guysExtensionHandleToggle" + type] = status;
-    return false;
-  }
 }
-
-// The body of this function will be executed as a content script inside the
-// current page
-
-
-
 //  /(?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?/
