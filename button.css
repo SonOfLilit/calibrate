@@ -2,11 +2,12 @@
 *:before,
 *:after {
   box-sizing: border-box;
-  width: 125px
+  width: 125px;
 }
 
 body {
-  font-family: -apple-system, ".SFNSText-Regular", "Helvetica Neue", "Roboto", "Segoe UI", sans-serif;
+  font-family: -apple-system, ".SFNSText-Regular", "Helvetica Neue", "Roboto",
+    "Segoe UI", sans-serif;
 }
 
 hr {
@@ -31,7 +32,8 @@ hr {
   vertical-align: middle;
   transition: background 0.25s;
 }
-.toggle-switch:before, .toggle-switch:after {
+.toggle-switch:before,
+.toggle-switch:after {
   content: "";
 }
 .toggle-switch:before {

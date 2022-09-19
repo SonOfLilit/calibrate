@@ -1,8 +1,8 @@
-let listOfSites = {}
-let listOfPages = {}
+let listOfSites = {};
+let listOfPages = {};
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({ listOfSites })
-  chrome.storage.sync.set({ listOfPages })
+  chrome.storage.sync.set({ listOfSites });
+  chrome.storage.sync.set({ listOfPages });
 });
 
 function backgroundScript(site, page) {
@@ -12,7 +12,7 @@ function backgroundScript(site, page) {
     return;
   }
   if (site == "www.google.com") {
-    console.log("This page is not supported for transformation.")
+    console.log("This page is not supported for transformation.");
     return;
   }
   chrome.storage.sync.get("listOfSites", ({ listOfSites }) => {
@@ -23,8 +23,7 @@ function backgroundScript(site, page) {
     chrome.storage.sync.get("listOfPages", ({ listOfPages }) => {
       list = listOfPages;
       if (page in list) {
-        if (list[page])
-          transform = list[page];
+        if (list[page]) transform = list[page];
       }
       if (transform) {
         _transformNumbersOfPage();
@@ -41,11 +40,11 @@ function backgroundScript(site, page) {
             continue;
           }
           let text = escapeHtml(child.textContent);
-          let regex = /(?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?/g
+          let regex = /(?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?/g;
           if (!regex.test(text)) continue;
           text = text.replace(
             /((?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?)/g,
-            "<span style=\"background-color: black; color: black\" onMouseOver='this.replaceWith(document.createTextNode(\"$1\"))'>XXXX</span>"
+            '<span style="background-color: black; color: black" onMouseOver=\'this.replaceWith(document.createTextNode("$1"))\'>XXXX</span>',
           );
           const span = document.createElement("span");
           span.innerHTML = text;
@@ -58,7 +57,7 @@ function backgroundScript(site, page) {
 }
 
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-  if (changeInfo.status == 'complete' && tab.status == 'complete') {
+  if (changeInfo.status == "complete" && tab.status == "complete") {
     let url = new URL(tab.url);
     site = url.hostname;
     page = url.hostname + url.pathname;
@@ -66,7 +65,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     chrome.scripting.executeScript({
       args: [site, page],
       target: { tabId: tabId },
-      func: backgroundScript
+      func: backgroundScript,
     });
   }
 });
