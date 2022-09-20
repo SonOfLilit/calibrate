@@ -1,0 +1,22 @@
+{
+  "name": "calibrate",
+  "private": true,
+  "scripts": {
+    "zip": "bestzip extension.zip src/ logos/ manifest.json LICENSE.md",
+    "test": "standard"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SonOfLilit/calibrate.git"
+  },
+  "author": "Aur Saraf",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SonOfLilit/calibrate/issues"
+  },
+  "homepage": "https://github.com/SonOfLilit/calibrate#readme",
+  "devDependencies": {
+    "bestzip": "^2.2.1",
+    "standard": "^12.0.1"
+  }
+}
