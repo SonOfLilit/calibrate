@@ -63,6 +63,11 @@ function handleToggle(type, status, site, page) {
   SITE = 0;
   PAGE = 1;
 
+  if (site == "www.google.com") {
+    console.log("This page is not supported for transformation.");
+    return;
+  }
+
   if (type === SITE) {
     chrome.storage.sync.get({ listOfSites: {} }, function (data) {
       _update(type, status, data.listOfSites, site, page);
@@ -108,7 +113,6 @@ function handleToggle(type, status, site, page) {
         _revertPage();
       }
     }
-    //then call the set to update with modified value
     if (type === SITE) {
       chrome.storage.sync.set({
         listOfSites: dict,
@@ -150,10 +154,6 @@ function handleToggle(type, status, site, page) {
         span.innerHTML = text;
         child.replaceWith(span);
       }
-    }
-    if (site == "www.google.com") {
-      console.log("This page is not supported for transformation.");
-      return;
     }
     replaceNumbers(document.body);
   }
