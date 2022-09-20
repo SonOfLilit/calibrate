@@ -1,27 +1,27 @@
 {
-  "name": "Hidden Numbers",
-  "description": "Can you guess the numbers? Hide all numbers in almost any site.",
-  "version": "1.0",
+  "name": "Calibrate",
+  "description": "Chrome extension that hides numbers on web pages so you have an opportunity to guess them",
+  "version": "0.1.1",
   "manifest_version": 3,
   "background": {
-    "service_worker": "scripts/background.js"
+    "service_worker": "src/js/background.js"
   },
   "permissions": [
     "storage", "activeTab", "scripting","tabs"],
   "host_permissions": ["https://*/*", "http://*/*"],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "src/popup.html",
     "default_icon": {
-      "16": "/images/logo16.png",
-      "32": "/images/logo32.png",
-      "48": "/images/logo48.png",
-      "128": "/images/logo128.png"
+      "16": "/logos/logo16.png",
+      "32": "/logos/logo32.png",
+      "48": "/logos/logo48.png",
+      "128": "/logos/logo128.png"
     }
   },
   "icons": {
-    "16": "/images/logo16.png",
-    "32": "/images/logo32.png",
-    "48": "/images/logo48.png",
-    "128": "/images/logo128.png"
+    "16": "/logos/logo16.png",
+    "32": "/logos/logo32.png",
+    "48": "/logos/logo48.png",
+    "128": "/logos/logo128.png"
   }
 }
