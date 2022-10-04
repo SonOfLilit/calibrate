@@ -49,11 +49,11 @@ function backgroundScript(site, page) {
             continue;
           }
           let text = escapeHtml(child.textContent);
-          let regex = /(?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?/g;
+          let regex = /(?:\d{1,3}(,\d{3})+|\d+)(\.\d+)?/g;
           if (!regex.test(text)) continue;
           text = text.replace(
-            /((?:\d+|\d{1,3}(,\d{3})+)(\.\d+)?)/g,
-            '<span style="background-color: black; color: black" onMouseOver=\'this.replaceWith(document.createTextNode("$1"))\'>XXXX</span>',
+            regex,
+            '<span style="background-color: black; color: black" onMouseOver=\'this.replaceWith(document.createTextNode("$&"))\'>XXXX</span>',
           );
           const span = document.createElement("span");
           span.innerHTML = text;
